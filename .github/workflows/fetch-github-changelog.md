@@ -34,8 +34,15 @@ mcp-servers:
     env:
       TAVILY_API_KEY: "${{ secrets.TAVILY_API_KEY }}"
     allowed: ["search", "search_news"]
+
+tools:
+  bash: ["curl"]
 ---
 
 # GitHub Changelogを取得する
 
 https://github.blog/changelog/feed/ から2件取得して、issueにまとめてください
+
+URLへのアクセスは、Tavily MCP serverを使ってください。
+
+アクセスに失敗した場合、curlを試してください。
