@@ -4113,11 +4113,6 @@ jobs:
           name: agent-stdio.log
           path: /tmp/gh-aw/agent-stdio.log
           if-no-files-found: warn
-      - name: Ensure copilot logs directory exists
-        if: always()
-        run: |
-          mkdir -p /tmp/gh-aw/.copilot/logs/
-          echo "Created /tmp/gh-aw/.copilot/logs/ directory for error log validation"
       - name: Validate agent logs for errors
         if: always()
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
