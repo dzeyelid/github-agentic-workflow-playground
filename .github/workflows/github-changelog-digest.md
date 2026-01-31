@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: read
-  discussions: write
+  discussions: read
   issues: read
   pull-requests: read
 
@@ -59,13 +59,30 @@ tracker-id: "gh-changelog-digest"
 
 ## カテゴリマッピングと整理
 
-1. **カテゴリリストの読み込み**:
-   - `feed-categories.txt` ファイルからカテゴリリストを読み込んでください
-   - このファイルには15個のカテゴリが記載されており、この順序で表示してください
-   - 各行が1つのカテゴリを表します
+1. **カテゴリリスト（このワークフロー内に定義）**:
+  - 以下のカテゴリを、この順序で見出しとして出力してください
+  - どのカテゴリにも当てはまらない場合は最後の `Miscellaneous` に分類してください
+
+```
+Copilot
+Actions
+Security
+Project & Issues
+Code
+CI/CD
+API
+Enterprise
+Billing
+Mobile
+Design
+Docs
+Community
+Releases
+Miscellaneous
+```
 
 2. **RSSフィードのカテゴリマッピング**:
-   - RSSフィードの`<category>`タグを、`feed-categories.txt`のカテゴリに意味的にマッピングしてください
+  - RSSフィードの`<category>`タグを、上記カテゴリに意味的にマッピングしてください
    - RSSフィードのカテゴリ名とファイル内のカテゴリ名は完全一致しません
    - 例：
      - RSS: "GitHub Copilot" → "Copilot"
@@ -73,7 +90,7 @@ tracker-id: "gh-changelog-digest"
      - RSS: "Security & Compliance" → "Security"
      - RSS: "Projects" → "Project & Issues"
      - RSS: "Code Security" → "Security"
-   - どのカテゴリにも当てはまらない場合は、最後のカテゴリ（"Miscellaneous"）に分類
+  - どのカテゴリにも当てはまらない場合は、最後のカテゴリ（"Miscellaneous"）に分類
 
 ## Discussion への出力フォーマット
 
@@ -86,21 +103,18 @@ GitHub の Changelog から、YYYY年MM月の前半/後半の更新情報をま�
 
 ---
 
-## 1. [カテゴリ名]
+## [カテゴリ名]
 
-- [記事タイトル1](https://github.blog/changelog/...)  
-  _公開日: YYYY-MM-DD_
+- [記事タイトル1](https://github.blog/changelog/...)
+- [記事タイトル2](https://github.blog/changelog/...)
 
-- [記事タイトル2](https://github.blog/changelog/...)  
-  _公開日: YYYY-MM-DD_
-
-## 2. [カテゴリ名]
+## [カテゴリ名]
 
 （該当記事がない場合は、このセクション自体を省略）
 
 ...
 
-（以下、feed-categories.txt の順序に従ってカテゴリを続ける）
+（以下、このワークフロー内のカテゴリ定義の順序に従ってカテゴリを続ける）
 
 ---
 
