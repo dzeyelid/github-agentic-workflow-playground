@@ -20,7 +20,7 @@
 # For more information: https://github.com/githubnext/gh-aw/blob/main/.github/aw/github-agentic-workflows.md
 #
 #
-# frontmatter-hash: e892933274e2f36029100d0bf8272b6ddb7bf286249e9f18b50a01599ac66a46
+# frontmatter-hash: 7d86b58a7a7fc8765fbad3753ccecaca9fe4c80d9a76fa53504be8a57bed02db
 
 name: "GitHub Changelog Digest"
 "on":
@@ -28,6 +28,20 @@ name: "GitHub Changelog Digest"
   - cron: "0 9 13-15 * *"
   - cron: "0 9 28-31 * *"
   workflow_dispatch:
+    inputs:
+      period:
+        default: auto
+        description: 対象期間（auto / first / second）
+        options:
+        - auto
+        - first
+        - second
+        required: false
+        type: choice
+      year_month:
+        description: 対象年月（YYYY-MM）。未指定なら実行日から推定
+        required: false
+        type: string
 
 permissions: {}
 

@@ -1,9 +1,26 @@
 ---
+name: GitHub Changelog Digest
 on:
   schedule:
-    - cron: "0 9 13-15 * *"        # 前半：13日～15日の毎日9時（UTC）
-    - cron: "0 9 28-31 * *"        # 後半：28日～31日の毎日9時（UTC）
+    # 前半: 13日〜15日に実行（UTC）
+    - cron: "0 9 13-15 * *"
+    # 後半: 28日〜31日に実行（UTC）
+    - cron: "0 9 28-31 * *"
   workflow_dispatch:
+    inputs:
+      period:
+        description: "対象期間（auto / first / second）"
+        required: false
+        default: "auto"
+        type: choice
+        options:
+          - auto
+          - first
+          - second
+      year_month:
+        description: "対象年月（YYYY-MM）。未指定なら実行日から推定"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -34,34 +51,39 @@ tracker-id: "gh-changelog-digest"
 
 # GitHub Changelog Digest
 
-あなたは、GitHub Changelogの更新情報を収集して、Discussionに整理して投稿するボットです。
+あなたは GitHub Changelog（RSS）を収集し、期間ごと（前半/後半）にカテゴリ整理したダイジェストを GitHub Discussions に投稿します。
 
-## 今日の日付と期間の判定
+## 目標
 
-1. 現在の日付を確認してください（`date +%Y-%m-%d` および `date +%d` を使用）
-2. 日付に基づいて、以下のように期間を判定してください：
-   - **前半期間**: 1日～15日 → Discussion タイトル: "GitHub Changelog Digest - YYYY年MM月 前半（1～15日）"
-   - **後半期間**: 16日～末日 → Discussion タイトル: "GitHub Changelog Digest - YYYY年MM月 後半（16～末日）"
+- `https://github.blog/changelog/feed/` を取得し、対象期間内の記事だけを抽出
+- 記事をカテゴリに分類してマークダウンに整形
+- 同一期間の Discussion が既にあれば「追記」（コメント）または「更新」方針で重複を避ける
+  - 既存検出は `tracker-id: gh-changelog-digest` とタイトルで行う
 
-## RSS フィードの取得と処理
+## 対象期間の決定
 
-1. GitHub Changelog の RSS フィードを取得してください：
+1. `workflow_dispatch` の inputs を読む
+   - `period` が `first` / `second` ならそれを優先
+   - `auto` の場合は実行日の日付から判定
+     - 前半: 1〜15日
+     - 後半: 16日〜末日
+2. `year_month` が指定されていればその年月（YYYY-MM）を使う
+3. Discussion タイトル案:
+   - 前半: `GitHub Changelog Digest - YYYY年MM月 前半（1〜15日）`
+   - 後半: `GitHub Changelog Digest - YYYY年MM月 後半（16日〜末日）`
+
+## RSS の取得と抽出
+
+1. RSS を取得
    - URL: `https://github.blog/changelog/feed/`
-   - `curl` または web-fetch ツールを使用
+2. `<item>` から以下を抽出
+   - タイトル / リンク / 公開日（pubDate） / カテゴリ（複数可）
+3. 対象期間でフィルタ
 
-2. RSS フィード内の各記事（`<item>`）から以下の情報を抽出：
-   - `<title>`: 記事タイトル
-   - `<link>`: 記事URL
-   - `<pubDate>`: 公開日時
-   - `<category>`: カテゴリ（複数の場合があります）
+## カテゴリ整理
 
-3. **期間フィルタリング**: 公開日が該当期間内（前半: 1～15日、後半: 16～末日）の記事のみを収集
-
-## カテゴリマッピングと整理
-
-1. **カテゴリリスト（このワークフロー内に定義）**:
-  - 以下のカテゴリを、この順序で見出しとして出力してください
-  - どのカテゴリにも当てはまらない場合は最後の `Miscellaneous` に分類してください
+- 可能ならリポジトリ内の `feed-categories.txt` を読み、この順番をカテゴリ見出し順として使う
+- 見つからない場合は、以下のデフォルト順を使う
 
 ```
 Copilot
@@ -81,20 +103,12 @@ Releases
 Miscellaneous
 ```
 
-2. **RSSフィードのカテゴリマッピング**:
-  - RSSフィードの`<category>`タグを、上記カテゴリに意味的にマッピングしてください
-   - RSSフィードのカテゴリ名とファイル内のカテゴリ名は完全一致しません
-   - 例：
-     - RSS: "GitHub Copilot" → "Copilot"
-     - RSS: "GitHub Actions" → "Actions"
-     - RSS: "Security & Compliance" → "Security"
-     - RSS: "Projects" → "Project & Issues"
-     - RSS: "Code Security" → "Security"
-  - どのカテゴリにも当てはまらない場合は、最後のカテゴリ（"Miscellaneous"）に分類
+### マッピング
 
-## Discussion への出力フォーマット
+RSS のカテゴリ名は完全一致しないため、意味的に最も近い見出しへ割り当ててください。
+当てはまらないものは `Miscellaneous` に入れてください。
 
-以下のマークダウン形式で Discussion を作成してください：
+## Discussion 本文のフォーマット
 
 ```markdown
 # GitHub Changelog Digest - YYYY年MM月 前半/後半
@@ -105,44 +119,20 @@ GitHub の Changelog から、YYYY年MM月の前半/後半の更新情報をま�
 
 ## [カテゴリ名]
 
-- [記事タイトル1](https://github.blog/changelog/...)
-- [記事タイトル2](https://github.blog/changelog/...)
-
-## [カテゴリ名]
-
-（該当記事がない場合は、このセクション自体を省略）
-
-...
-
-（以下、このワークフロー内のカテゴリ定義の順序に従ってカテゴリを続ける）
+- [記事タイトル](URL)
 
 ---
 
-**📅 対象期間**: YYYY年MM月DD日～DD日  
-**🔄 最終更新**: YYYY-MM-DD HH:MM UTC  
-**📊 記事総数**: XX件
+**対象期間**: YYYY年MM月DD日〜DD日  
+**最終更新**: YYYY-MM-DD HH:MM UTC  
+**記事総数**: XX件
 ```
 
-## 既存 Discussion の更新
+### 並び順
 
-**重要**: 同じ期間（前半 or 後半）の Discussion が既に存在するかを確認してください。
+- カテゴリ内は公開日の昇順（古い→新しい）
+- 該当記事がないカテゴリ見出しは出力しない
 
-1. `tracker-id: gh-changelog-digest` を使って、既存の Discussion を検索
-2. タイトルに「YYYY年MM月 前半」または「YYYY年MM月 後半」を含む Discussion を探す
-3. **既存の Discussion が見つかった場合**:
-   - その Discussion のコメントとして、更新内容を追記してください
-   - 新しい記事のみを追記（重複を避ける）
-4. **既存の Discussion がない場合**:
-   - 新しい Discussion を作成してください
+## 例外時の挙動
 
-## リンクの順序
-
-各カテゴリ内では、**古い記事を上に、新しい記事を下に**配置してください（公開日の昇順）。
-
-## 実行のガイドライン
-
-- 記事が0件の場合でも、空のカテゴリは表示せず、「記事総数: 0件」と表示してください
-- エラーが発生した場合は、エラー内容を Discussion に記載してください
-- RSS フィードのパース時は、XMLの構造に注意してください（`<item>` 要素を正しく抽出）
-
-それでは、GitHub Changelog Digest の収集と整理を開始してください！✨
+- RSS 取得やパースに失敗したら、原因（HTTP ステータス/エラー）を含めて Discussion に残す（可能な範囲で）
